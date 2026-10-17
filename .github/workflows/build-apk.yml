@@ -12,11 +12,18 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
-      - name: Configure Bubblewrap
+      - name: Setup Android SDK
         run: |
+          SDK=$HOME/android-sdk
+          mkdir -p $SDK/cmdline-tools
+          curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cl.zip
+          unzip -q cl.zip -d $SDK/tmp
+          mv $SDK/tmp/cmdline-tools $SDK/cmdline-tools/latest
+          ln -s $SDK/cmdline-tools/latest $SDK/tools
+          yes | $SDK/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK --licenses > /dev/null || true
+          $SDK/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK "platform-tools" "platforms;android-34" "build-tools;34.0.0"
           mkdir -p ~/.bubblewrap
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$SDK\"}" > ~/.bubblewrap/config.json
       - name: Create signing key
         run: |
           keytool -genkeypair -v -keystore android.keystore -alias sofaraa -keyalg RSA -keysize 2048 -validity 10000 \
